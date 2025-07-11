@@ -17,7 +17,7 @@ def run_dns_server():
     resolver = AppsLanResolver()
     logger = DNSLogger(prefix=False)
     # Bind to localhost only or a custom port, e.g. 5300 (non-privileged)
-    server = DNSServer(resolver, port=53, address='0.0.0.0', logger=logger)
+    server = DNSServer(resolver, port=1000, address='0.0.0.0', logger=logger)
     server.start_thread()
     print(f"DNS server running, resolving {DOMAIN} → {HOST_IP}")
     try:
