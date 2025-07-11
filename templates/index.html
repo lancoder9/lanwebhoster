@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Network Apps</title>
+    <style>
+        body { background:black; color:#00ff00; font-family:monospace; }
+        h1, a { color:#00ff00; text-decoration:none; }
+        .project { display:flex; align-items:center; margin-bottom:10px; }
+        img { width:32px; height:32px; margin-right:10px; border:1px solid #0f0; }
+    </style>
+</head>
+<body>
+    <h1>Available Projects</h1>
+    <div>
+        {% for project in projects %}
+        <div class="project">
+            <img src="/hostedsite/{{ project.icon }}">
+            <a href="/hostedsite/{{ project.file }}">{{ project.name }}</a>
+        </div>
+        {% endfor %}
+    </div>
+    <a href="/host">+ Upload New Project</a>
+</body>
+</html>
