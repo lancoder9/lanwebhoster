@@ -2,36 +2,94 @@ from flask import Flask, render_template, request, redirect, send_from_directory
 import os
 import subprocess
 import uuid
+import socket
+from threading import Thread
 from werkzeug.utils import secure_filename
 from functools import wraps
 
+# Flask setup
 app = Flask(__name__)
-app.secret_key = 'super_secret_key'  # Needed for flash messages
+app.secret_key = 'super_secret_key'
 
 UPLOAD_FOLDER = 'static/hosted'
 ALLOWED_PROJECT_EXTENSIONS = {'html', 'zip'}
 ALLOWED_ICON_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'ico'}
-MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # 16 MB max file size
+MAX_CONTENT_LENGTH = 16 * 1024 * 1024
 
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['MAX_CONTENT_LENGTH'] = MAX_CONTENT_LENGTH
-
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
+# DNS setup
+from dnslib.server import DNSServer, BaseResolver, DNSLogger
+from dnslib import RR, QTYPE, A, DNSRecord
+
+HOST_IP = '10.0.0.6'
+DOMAIN = 'apps.lan.'
+
+# --- DNS Resolver ---
+class ProxyResolver:
+    def __init__(self, forward_ip='1.1.1.1', forward_port=53):
+        self.forward_ip = forward_ip
+        self.forward_port = forward_port
+
+    def resolve(self, request, handler):
+        data = request.pack()
+        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        sock.settimeout(3)
+        sock.sendto(data, (self.forward_ip, self.forward_port))
+        try:
+            data, _ = sock.recvfrom(4096)
+            return DNSRecord.parse(data)
+        except socket.timeout:
+            return request.reply()
+
+class AppsLanResolver(BaseResolver):
+    def __init__(self):
+        self.forwarder = ProxyResolver()
+
+    def resolve(self, request, handler):
+        qname = request.q.qname
+        reply = request.reply()
+        if str(qname) == DOMAIN:
+            reply.add_answer(RR(qname, QTYPE.A, rclass=1, ttl=300, rdata=A(HOST_IP)))
+        else:
+            return self.forwarder.resolve(request, handler)
+        return reply
+
+def run_dns_server():
+    resolver = AppsLanResolver()
+    logger = DNSLogger(prefix=False)
+    server = DNSServer(resolver, port=53, address='0.0.0.0', logger=logger)
+    server.start_thread()
+    print(f"[DNS] apps.lan → {HOST_IP} (forwarding others to 1.1.1.1)")
+
+# --- Helper Functions ---
 def allowed_file(filename, allowed_exts):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in allowed_exts
 
 def sanitize_filename(filename):
     return secure_filename(filename)
 
-# Dummy authentication decorator (replace with real logic)
 def login_required(f):
     @wraps(f)
-    def decorated_function(*args, **kwargs):
-        # if not logged_in: abort(403)
+    def decorated(*args, **kwargs):
         return f(*args, **kwargs)
-    return decorated_function
+    return decorated
 
+def get_projects():
+    entries = []
+    for fname in os.listdir(UPLOAD_FOLDER):
+        if fname.endswith(".meta"):
+            try:
+                with open(os.path.join(UPLOAD_FOLDER, fname), 'r') as f:
+                    name, icon, file = f.read().splitlines()
+                    entries.append({'name': name, 'icon': icon, 'file': file})
+            except Exception:
+                continue
+    return entries
+
+# --- Routes ---
 @app.route('/')
 def index():
     entries = []
@@ -42,15 +100,13 @@ def index():
                 with open(meta_path, 'r') as f:
                     lines = f.read().splitlines()
                     if len(lines) != 3:
-                        continue  # Skip malformed meta
+                        continue
                     name, icon, file = lines
-                    # Check if files exist
                     icon_path = os.path.join(UPLOAD_FOLDER, icon)
                     file_path = os.path.join(UPLOAD_FOLDER, file)
                     if os.path.exists(icon_path) and os.path.exists(file_path):
                         entries.append({'name': name, 'icon': icon, 'file': file})
                     else:
-                        # Clean up orphaned meta
                         os.remove(meta_path)
             except Exception:
                 continue
@@ -66,12 +122,10 @@ def host():
         projfile = request.files.get('project_file')
         iconfile = request.files.get('icon_file')
 
-        # Validate project name
         if not projname:
             error = "Project name is required."
         elif any(projname == entry['name'] for entry in get_projects()):
             error = "A project with this name already exists."
-        # Validate and save files
         elif not (projfile and allowed_file(projfile.filename, ALLOWED_PROJECT_EXTENSIONS)):
             error = f"Invalid or missing project file. Allowed: {ALLOWED_PROJECT_EXTENSIONS}"
         elif not (iconfile and allowed_file(iconfile.filename, ALLOWED_ICON_EXTENSIONS)):
@@ -86,7 +140,7 @@ def host():
 
                 projfile.save(proj_path)
                 iconfile.save(icon_path)
-                # Write meta file
+
                 with open(os.path.join(UPLOAD_FOLDER, f"{proj_id}.meta"), 'w') as f:
                     f.write(f"{projname}\n{icon_filename}\n{proj_filename}")
                 message = "Project uploaded successfully!"
@@ -94,29 +148,15 @@ def host():
                 error = f"Upload failed: {str(e)}"
     return render_template('host.html', message=message, error=error)
 
-def get_projects():
-    entries = []
-    for fname in os.listdir(UPLOAD_FOLDER):
-        if fname.endswith(".meta"):
-            try:
-                with open(os.path.join(UPLOAD_FOLDER, fname), 'r') as f:
-                    name, icon, file = f.read().splitlines()
-                    entries.append({'name': name, 'icon': icon, 'file': file})
-            except Exception:
-                continue
-    return entries
-
 @app.route('/hostedsite/<path:filename>')
 def hostedsite(filename):
-    # Prevent directory traversal attacks and allow only known hosted files
     safe_filename = sanitize_filename(filename)
     allowed = any(
         safe_filename == entry['icon'] or safe_filename == entry['file']
         for entry in get_projects()
     )
     if not allowed:
-        abort(404, description="File not found.")
-    # Serve only allowed file types
+        abort(404)
     ext = safe_filename.rsplit('.', 1)[-1].lower()
     if ext not in (ALLOWED_PROJECT_EXTENSIONS | ALLOWED_ICON_EXTENSIONS):
         abort(403)
@@ -140,8 +180,6 @@ def execute():
     except Exception as e:
         return jsonify(output=str(e))
 
-# --- New section: Serve raw template HTML as plain text (source view) ---
-
 @app.route('/view-template/<template_name>')
 def view_template(template_name):
     allowed_templates = {'index.html', 'host.html', 'console.html'}
@@ -152,10 +190,7 @@ def view_template(template_name):
         abort(404)
     with open(template_path, 'r', encoding='utf-8') as f:
         code = f.read()
-    # Display as plain text
     return Response(code, mimetype='text/plain')
-
-# --- Optional: explicit /view/index, /view/host, /view/console for rendered templates ---
 
 @app.route('/view/index')
 def view_index():
@@ -177,5 +212,7 @@ def not_found(error):
 def file_too_large(error):
     return render_template('413.html', error=error), 413
 
+# --- Launch ---
 if __name__ == '__main__':
+    Thread(target=run_dns_server, daemon=True).start()
     app.run(host='0.0.0.0', port=8080)
