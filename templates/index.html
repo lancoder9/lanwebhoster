@@ -3,22 +3,36 @@
 <head>
     <title>Network Apps</title>
     <style>
-        body { background:black; color:#00ff00; font-family:monospace; }
-        h1, a { color:#00ff00; text-decoration:none; }
-        .project { display:flex; align-items:center; margin-bottom:10px; }
-        img { width:32px; height:32px; margin-right:10px; border:1px solid #0f0; }
+        body { background: black; color: #00ff00; font-family: 'Courier New', monospace; margin: 0; padding: 20px; }
+        .scanlines::after {
+            content: ""; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: repeating-linear-gradient(to bottom, rgba(0,255,0,0.04), rgba(0,255,0,0.04) 2px, transparent 2px, transparent 4px);
+            pointer-events: none; z-index: 99;
+        }
+        .terminal-box {
+            border: 2px solid #00ff00; padding: 20px; box-shadow: 0 0 10px #00ff00;
+            animation: flicker 0.2s infinite alternate;
+        }
+        .project { display: flex; align-items: center; margin-bottom: 15px; }
+        img { width: 48px; height: 48px; margin-right: 12px; border: 1px solid #00ff00; }
+        a { color: #00ff00; text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        .blinking-cursor::after { content: "_"; animation: blink 1s steps(2, start) infinite; }
+        @keyframes blink { to { visibility: hidden; } }
+        @keyframes flicker { 0% { opacity: 1; } 100% { opacity: 0.97; } }
     </style>
 </head>
-<body>
-    <h1>Available Projects</h1>
-    <div>
+<body class="scanlines">
+    <div class="terminal-box">
+        <h1>📂 Index of / <span class="blinking-cursor"></span></h1>
         {% for project in projects %}
         <div class="project">
             <img src="/hostedsite/{{ project.icon }}">
             <a href="/hostedsite/{{ project.file }}">{{ project.name }}</a>
         </div>
         {% endfor %}
+        <br>
+        <a href="/host">[+] Upload New Project</a>
     </div>
-    <a href="/host">+ Upload New Project</a>
 </body>
 </html>
