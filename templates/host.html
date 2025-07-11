@@ -1,37 +1,135 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Upload Project</title>
-    <style>
-        body { background: black; color: #00ff00; font-family: 'Courier New', monospace; margin: 0; padding: 20px; }
-        .scanlines::after {
-            content: ""; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: repeating-linear-gradient(to bottom, rgba(0,255,0,0.04), rgba(0,255,0,0.04) 2px, transparent 2px, transparent 4px);
-            pointer-events: none; z-index: 99;
-        }
-        .terminal-box {
-            border: 2px solid #00ff00; padding: 20px; box-shadow: 0 0 10px #00ff00;
-            animation: flicker 0.2s infinite alternate;
-        }
-        input, button {
-            background: black; color: #00ff00; border: 1px solid #00ff00;
-            padding: 8px; font-family: inherit; margin-bottom: 10px; width: 100%;
-        }
-        a { color: #00ff00; text-decoration: none; }
-        a:hover { text-decoration: underline; }
-        @keyframes flicker { 0% { opacity: 1; } 100% { opacity: 0.97; } }
-    </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Upload Project</title>
+<style>
+  body {
+    background: black;
+    color: #00ff00;
+    font-family: 'Courier New', monospace;
+    margin: 0;
+    padding: 20px;
+    overflow-x: hidden;
+  }
+  .scanlines::after {
+    content: "";
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%;
+    height: 100%;
+    background: repeating-linear-gradient(
+      to bottom,
+      rgba(0,255,0,0.04),
+      rgba(0,255,0,0.04) 2px,
+      transparent 2px,
+      transparent 4px
+    );
+    pointer-events: none;
+    z-index: 99;
+  }
+  .terminal-box {
+    border: 2px solid #00ff00;
+    padding: 20px;
+    box-shadow: 0 0 10px #00ff00;
+    animation: flicker 0.2s infinite alternate;
+  }
+  input, button {
+    background: black;
+    color: #00ff00;
+    border: 1px solid #00ff00;
+    padding: 8px;
+    font-family: inherit;
+    margin-bottom: 10px;
+    width: 100%;
+  }
+  a {
+    color: #00ff00;
+    text-decoration: none;
+  }
+  a:hover {
+    text-decoration: underline;
+  }
+  @keyframes flicker {
+    0% { opacity: 1; }
+    100% { opacity: 0.97; }
+  }
+
+  /* Boot animation overlay */
+  #boot-overlay {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: black;
+    color: #00ff00;
+    font-family: 'Courier New', monospace;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    z-index: 99999;
+    user-select: none;
+    animation: flicker 0.15s infinite alternate;
+  }
+  #boot-overlay a {
+    color: #00ff00;
+    text-decoration: underline;
+    font-weight: bold;
+  }
+  #boot-overlay a:hover {
+    color: #55ff55;
+  }
+  #boot-text {
+    font-size: 1.8rem;
+    margin-bottom: 0.5rem;
+  }
+  #boot-subtext {
+    font-size: 1.2rem;
+  }
+  #boot-overlay.fadeout {
+    animation: fadeOut 1s forwards;
+  }
+  @keyframes fadeOut {
+    to {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
+  }
+</style>
 </head>
 <body class="scanlines">
-    <div class="terminal-box">
-        <h1>📁 Upload Project</h1>
-        <form method="post" enctype="multipart/form-data">
-            <input type="text" name="project" placeholder="Project name" required>
-            <input type="file" name="project_file" required>
-            <input type="file" name="icon_file" required>
-            <button type="submit">Upload</button>
-        </form>
-        <a href="/">← Back</a>
-    </div>
+
+<!-- Boot animation overlay -->
+<div id="boot-overlay">
+  <div id="boot-text">Created by <a href="https://github.com/lancoder9/lanwebhoster/" target="_blank" rel="noopener noreferrer">LanCoder9</a></div>
+  <div id="boot-subtext">Loading...</div>
+</div>
+
+<!-- Main content -->
+<div class="terminal-box" id="main-content" style="display:none;">
+  <h1>📁 Upload Project</h1>
+  <form method="post" enctype="multipart/form-data">
+    <input type="text" name="project" placeholder="Project name" required />
+    <input type="file" name="project_file" required />
+    <input type="file" name="icon_file" required />
+    <button type="submit">Upload</button>
+  </form>
+  <a href="/">← Back</a>
+</div>
+
+<script>
+  setTimeout(() => {
+    const boot = document.getElementById('boot-overlay');
+    boot.classList.add('fadeout');
+    setTimeout(() => {
+      boot.style.display = 'none';
+      document.getElementById('main-content').style.display = 'block';
+    }, 1000);
+  }, 3000);
+</script>
+
 </body>
 </html>
