@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Host App</title>
+    <style>
+        body { background:black; color:#00ff00; font-family:monospace; }
+        input, button { background:#000; color:#0f0; border:1px solid #0f0; padding:6px; display:block; margin-bottom:10px; }
+    </style>
+</head>
+<body>
+    <h1>Upload a Project</h1>
+    <form method="post" enctype="multipart/form-data">
+        <input type="text" name="project" placeholder="Project name" required>
+        <input type="file" name="project_file" required>
+        <input type="file" name="icon_file" required>
+        <button type="submit">Upload</button>
+    </form>
+    <a href="/">← Back</a>
+</body>
+</html>
