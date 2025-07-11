@@ -1,20 +1,37 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Host App</title>
+    <title>Upload Project</title>
     <style>
-        body { background:black; color:#00ff00; font-family:monospace; }
-        input, button { background:#000; color:#0f0; border:1px solid #0f0; padding:6px; display:block; margin-bottom:10px; }
+        body { background: black; color: #00ff00; font-family: 'Courier New', monospace; margin: 0; padding: 20px; }
+        .scanlines::after {
+            content: ""; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: repeating-linear-gradient(to bottom, rgba(0,255,0,0.04), rgba(0,255,0,0.04) 2px, transparent 2px, transparent 4px);
+            pointer-events: none; z-index: 99;
+        }
+        .terminal-box {
+            border: 2px solid #00ff00; padding: 20px; box-shadow: 0 0 10px #00ff00;
+            animation: flicker 0.2s infinite alternate;
+        }
+        input, button {
+            background: black; color: #00ff00; border: 1px solid #00ff00;
+            padding: 8px; font-family: inherit; margin-bottom: 10px; width: 100%;
+        }
+        a { color: #00ff00; text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        @keyframes flicker { 0% { opacity: 1; } 100% { opacity: 0.97; } }
     </style>
 </head>
-<body>
-    <h1>Upload a Project</h1>
-    <form method="post" enctype="multipart/form-data">
-        <input type="text" name="project" placeholder="Project name" required>
-        <input type="file" name="project_file" required>
-        <input type="file" name="icon_file" required>
-        <button type="submit">Upload</button>
-    </form>
-    <a href="/">← Back</a>
+<body class="scanlines">
+    <div class="terminal-box">
+        <h1>📁 Upload Project</h1>
+        <form method="post" enctype="multipart/form-data">
+            <input type="text" name="project" placeholder="Project name" required>
+            <input type="file" name="project_file" required>
+            <input type="file" name="icon_file" required>
+            <button type="submit">Upload</button>
+        </form>
+        <a href="/">← Back</a>
+    </div>
 </body>
 </html>
