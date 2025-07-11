@@ -1,18 +1,37 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Console</title>
+    <title>Terminal Console</title>
     <style>
-        body { background:black; color:#00ff00; font-family:monospace; }
-        #output { white-space:pre; border:1px solid #0f0; padding:10px; margin-top:10px; height:300px; overflow:auto; }
-        input, button { background:#000; color:#0f0; border:1px solid #0f0; padding:6px; }
+        body { background: black; color: #00ff00; font-family: 'Courier New', monospace; margin: 0; padding: 20px; }
+        .scanlines::after {
+            content: ""; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: repeating-linear-gradient(to bottom, rgba(0,255,0,0.04), rgba(0,255,0,0.04) 2px, transparent 2px, transparent 4px);
+            pointer-events: none; z-index: 99;
+        }
+        .terminal-box {
+            border: 2px solid #00ff00; padding: 20px; box-shadow: 0 0 10px #00ff00;
+            animation: flicker 0.2s infinite alternate;
+        }
+        input, button {
+            background: black; color: #00ff00; border: 1px solid #00ff00;
+            padding: 8px; font-family: inherit; width: 100%; margin-bottom: 10px;
+        }
+        #output {
+            background: black; border: 1px solid #00ff00;
+            padding: 10px; height: 300px; overflow-y: scroll;
+            white-space: pre-wrap; box-shadow: inset 0 0 5px #00ff00;
+        }
+        @keyframes flicker { 0% { opacity: 1; } 100% { opacity: 0.97; } }
     </style>
 </head>
-<body>
-    <h1>Execute Command</h1>
-    <input id="cmd" type="text" placeholder="ls, pwd, etc...">
-    <button onclick="run()">Run</button>
-    <div id="output"></div>
+<body class="scanlines">
+    <div class="terminal-box">
+        <h1>🖥️ Console</h1>
+        <input id="cmd" type="text" placeholder="Enter command like ls, whoami, etc...">
+        <button onclick="run()">Execute</button>
+        <div id="output"></div>
+    </div>
     <script>
         async function run() {
             const cmd = document.getElementById('cmd').value
