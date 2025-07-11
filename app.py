@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, send_from_directory, jsonify, flash, url_for, abort
+from flask import Flask, render_template, request, redirect, send_from_directory, jsonify, flash, url_for, abort, Response
 import os
 import subprocess
 import uuid
@@ -139,6 +139,35 @@ def execute():
         return jsonify(output=e.output.decode())
     except Exception as e:
         return jsonify(output=str(e))
+
+# --- New section: Serve raw template HTML as plain text (source view) ---
+
+@app.route('/view-template/<template_name>')
+def view_template(template_name):
+    allowed_templates = {'index.html', 'host.html', 'console.html'}
+    if template_name not in allowed_templates:
+        abort(404)
+    template_path = os.path.join(app.root_path, 'templates', template_name)
+    if not os.path.exists(template_path):
+        abort(404)
+    with open(template_path, 'r', encoding='utf-8') as f:
+        code = f.read()
+    # Display as plain text
+    return Response(code, mimetype='text/plain')
+
+# --- Optional: explicit /view/index, /view/host, /view/console for rendered templates ---
+
+@app.route('/view/index')
+def view_index():
+    return render_template('index.html')
+
+@app.route('/view/host')
+def view_host_page():
+    return render_template('host.html')
+
+@app.route('/view/console')
+def view_console_page():
+    return render_template('console.html')
 
 @app.errorhandler(404)
 def not_found(error):
